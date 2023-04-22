@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1>SKU管理</h1>
+         <h1>添加SKU的结构</h1>
     </div>
 </template>
 
@@ -8,4 +8,6 @@
 
 </script>
 
-<style scoped></style>
+<style scoped>
+
+</style>

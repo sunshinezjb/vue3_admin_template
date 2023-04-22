@@ -15,18 +15,11 @@
                     <el-table-column label="SPU操作">
                         <!-- row:即为已有的SPU对象 -->
                         <template #="{ row, $index }">
-                            <el-button type="primary" size="small" icon="Plus" title="添加SKU"
-                                @click="addSku(row)"></el-button>
+                            <el-button type="primary" size="small" icon="Plus" title="添加SKU"></el-button>
                             <el-button type="primary" size="small" icon="Edit" title="修改SPU"
                                 @click="updateSpu(row)"></el-button>
-                            <el-button type="primary" size="small" icon="View" title="查看SKU列表"
-                                @click="findSku(row)"></el-button>
-                            <el-popconfirm :title="`你确定删除${row.spuName}?`" width="200px" @confirm="deleteSpu(row)">
-                                <template #reference>
-                                    <el-button type="primary" size="small" icon="Delete" title="删除SPU"></el-button>
-                                </template>
-                            </el-popconfirm>
-
+                            <el-button type="primary" size="small" icon="View" title="查看SKU列表"></el-button>
+                            <el-button type="primary" size="small" icon="Delete" title="删除SPU"></el-button>
                         </template>
                     </el-table-column>
                 </el-table>
@@ -38,34 +31,20 @@
             <!-- 添加SPU|修改SPU子组件 -->
             <SpuForm ref="spu" v-show="scene == 1" @changeScene="changeScene"></SpuForm>
             <!-- 添加SKU的子组件 -->
-            <SkuForm ref="sku" v-show="scene == 2" @changeScene="changeScene"></SkuForm>
-            <!-- dialog对话框:展示已有的SKU数据 -->
-            <el-dialog v-model="show" title="SKU列表">
-                <el-table border :data="skuArr">
-                    <el-table-column label="SKU名字" prop="skuName"></el-table-column>
-                    <el-table-column label="SKU价格" prop="price"></el-table-column>
-                    <el-table-column label="SKU重量" prop="weight"></el-table-column>
-                    <el-table-column label="SKU图片">
-                        <template #="{ row, $index }">
-                            <img :src="row.skuDefaultImg" style="width: 100px;height: 100px;">
-                        </template>
-                    </el-table-column>
-                </el-table>
-            </el-dialog>
+            <SkuForm v-show="scene == 2"></SkuForm>
         </el-card>
     </div>
 </template>
 
 <script setup lang="ts">
-import type { HasSpuResponseData, Records, SkuInfoData, SkuData } from '@/api/product/spu/type'
-import { ref, watch, onBeforeUnmount } from 'vue';
-import { reqHasSpu, reqSkuList, reqRemoveSpu } from '@/api/product/spu';
+import type { HasSpuResponseData, Records } from '@/api/product/spu/type'
+import { ref, watch } from 'vue';
+import { reqHasSpu } from '@/api/product/spu';
 //引入分类的仓库
 import useCategoryStore from '@/store/modules/category';
 import type { SpuData } from '@/api/product/spu/type'
 import SpuForm from './spuForm.vue';
 import SkuForm from './skuForm.vue';
-import { ElMessage } from 'element-plus';
 let categoryStore = useCategoryStore();
 //场景的数据
 let scene = ref<number>(0); //0:显示已有SPU  1:添加或者修改已有SPU 2:添加SKU的结构
@@ -79,11 +58,7 @@ let records = ref<Records>([]);
 let total = ref<number>(0);
 //获取子组件实例SpuForm
 let spu = ref<any>();
-//获取子组件实例SkuForm
-let sku = ref<any>();
-//存储全部的SKU数据
-let skuArr = ref<SkuData[]>([]);
-let show = ref<boolean>(false);
+
 //监听三级分类ID变化
 watch(() => categoryStore.c3Id, () => {
     //当三级分类发生变化的时候清空对应的数据
@@ -112,8 +87,6 @@ const changeSize = () => {
 const addSpu = () => {
     //切换为场景1:添加与修改已有SPU结构->SpuForm
     scene.value = 1;
-    //点击添加SPU按钮,调用子组件的方法初始化数据
-    spu.value.initAddSpu(categoryStore.c3Id);
 }
 //修改已有的SPU的按钮的回调
 const updateSpu = (row: SpuData) => {
@@ -124,58 +97,11 @@ const updateSpu = (row: SpuData) => {
 }
 
 //子组件SpuForm绑定自定义事件:目前是让子组件通知父组件切换场景为0
-const changeScene = (obj: any) => {
+const changeScene = (num: number) => {
     //子组件Spuform点击取消变为场景0:展示已有的SPU
-    scene.value = obj.flag;
-    if (obj.params == 'update') {
-        //更新留在当前页
-        getHasSpu(pageNo.value);
-    } else {
-        //添加留在第一页
-        getHasSpu();
-    }
+    scene.value = num;
 }
 
-//添加SKU按钮的回调
-const addSku = (row: SpuData) => {
-    //点击添加SKU按钮切换场景为2
-    scene.value = 2;
-    //调用子组件的方法初始化添加SKU的数据
-    sku.value.initSkuData(categoryStore.c1Id, categoryStore.c2Id, row);
-}
-
-//查看SKU列表的数据
-const findSku = async (row: SpuData) => {
-    let result: SkuInfoData = await reqSkuList((row.id as number));
-    if (result.code == 200) {
-        skuArr.value = result.data;
-        //对话框显示出来
-        show.value = true;
-    }
-}
-
-//删除已有的SPU按钮的回调
-const deleteSpu = async (row: SpuData) => {
-    let result: any = await reqRemoveSpu((row.id as number));
-    if (result.code == 200) {
-        ElMessage({
-            type: 'success',
-            message: '删除成功'
-        });
-        //获取剩余SPU数据
-        getHasSpu(records.value.length > 1 ? pageNo.value : pageNo.value - 1)
-    } else {
-        ElMessage({
-            type: 'error',
-            message: '删除失败'
-        })
-    }
-}
-
-//路由组件销毁前，情况仓库关于分类的数据
-onBeforeUnmount(() => {
-    categoryStore.$reset();
-})
 </script>
 
 <style scoped></style>

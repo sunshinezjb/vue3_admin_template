@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1>SKU管理</h1>
+      分页器组件
     </div>
 </template>
 
@@ -8,4 +8,6 @@
 
 </script>
 
-<style scoped></style>
+<style scoped>
+
+</style>
