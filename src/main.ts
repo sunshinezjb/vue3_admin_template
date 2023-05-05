@@ -12,6 +12,8 @@ import gloalComponent from '@/components';
 //配置element-plus国际化
 //@ts-ignore
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+//暗黑模式需要的样式
+import 'element-plus/theme-chalk/dark/css-vars.css'
 //引入路由
 import router from './router'
 //引入仓库
@@ -30,5 +32,8 @@ app.use(pinia);
 app.use(router);
 //引入路由鉴权文件
 import './permisstion';
+//引入自定义指令文件
+import { isHasButton } from '@/directive/has';
+isHasButton(app);
 //将应用挂载到挂载点上
 app.mount('#app')
